@@ -1,31 +1,28 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { RentalRequestFormData } from '../components/RentalRequestForm/types';
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://samedayramps-016e8e090b17.herokuapp.com',
+  baseURL: process.env.REACT_APP_API_URL || 'https://app.samedayramps.com',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
 });
 
-export interface RentalRequestFormData {
+export interface RentalRequestResponse {
+  _id: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   knowRampLength: string;
-  estimatedRampLength: string;
+  estimatedRampLength?: string;
   knowRentalDuration: string;
-  estimatedRentalDuration: string;
+  estimatedRentalDuration?: string;
   installationTimeframe: string;
   mobilityAids: string[];
   installAddress: string;
-}
-
-export interface RentalRequestResponse {
-  message: string;
-  customerId: string;
-  jobId: string;
+  createdAt: string;
 }
 
 export const submitRentalRequest = async (formData: RentalRequestFormData): Promise<RentalRequestResponse> => {
