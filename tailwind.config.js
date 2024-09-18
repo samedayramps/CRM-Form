@@ -12,12 +12,12 @@ module.exports = {
         sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
       },
       fontSize: {
-        'input': '1.125rem', // 18px
-        'button': '1.25rem', // 20px
+        'input': '0.9375rem', // 15px
+        'button': '1.0625rem', // 17px
       },
       padding: {
-        'input': '0.75rem 1rem',
-        'button': '1rem 1.5rem',
+        'input': '0.625rem 0.875rem',
+        'button': '0.875rem 1.25rem',
       },
     },
   },
