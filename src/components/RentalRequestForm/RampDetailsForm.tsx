@@ -3,7 +3,7 @@ import { FormField } from './FormField';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { Checkbox } from '../ui/Checkbox';
+import { Spinner } from '../ui/Spinner';
 import { RentalRequestFormData, FormErrors, FormChangeHandler } from './types';
 import { loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
 
@@ -46,24 +46,29 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
     });
   }, [onChange]);
 
+  const handleMobilityAidChange = (aid: string) => {
+    const newMobilityAids = formData.mobilityAids.includes(aid)
+      ? formData.mobilityAids.filter(item => item !== aid)
+      : [...formData.mobilityAids, aid];
+    onChange('mobilityAids', newMobilityAids);
+  };
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Ramp Details</h2>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Do you know how long of a ramp you need?
+    <div className="space-y-4">
+      <h2 className="text-3xl font-bold mb-6">Ramp Details</h2>
+      
+      <div className="space-y-2">
+        <label className="form-label">
+          Do you know the required ramp length?
         </label>
-        <div>
-          <label className="inline-flex items-center mr-4">
+        <div className="space-x-4">
+          <label className="inline-flex items-center">
             <input
               type="radio"
               name="knowRampLength"
               value="yes"
               checked={formData.knowRampLength === 'yes'}
-              onChange={(e) => {
-                console.log('Ramp length changed to:', e.target.value); // Debug log
-                onChange('knowRampLength', e.target.value);
-              }}
+              onChange={(e) => onChange('knowRampLength', e.target.value)}
               className="form-radio"
             />
             <span className="ml-2">Yes</span>
@@ -84,7 +89,7 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
       
       {formData.knowRampLength === 'yes' && (
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="estimatedRampLength">
+          <label className="form-label" htmlFor="estimatedRampLength">
             Estimated ramp length required (in feet)
           </label>
           <Input
@@ -97,25 +102,22 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
             max="60"
             step="1"
           />
-          {errors.estimatedRampLength && <p className="text-red-500 text-xs italic">{errors.estimatedRampLength}</p>}
+          {errors.estimatedRampLength && <p className="form-error">{errors.estimatedRampLength}</p>}
         </div>
       )}
 
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Do you know how long you need the ramp?
+        <label className="form-label">
+          Do you know the duration of the rental?
         </label>
-        <div>
-          <label className="inline-flex items-center mr-4">
+        <div className="space-x-4">
+          <label className="inline-flex items-center">
             <input
               type="radio"
               name="knowRentalDuration"
               value="yes"
               checked={formData.knowRentalDuration === 'yes'}
-              onChange={(e) => {
-                console.log('Rental duration changed to:', e.target.value); // Debug log
-                onChange('knowRentalDuration', e.target.value);
-              }}
+              onChange={(e) => onChange('knowRentalDuration', e.target.value)}
               className="form-radio"
             />
             <span className="ml-2">Yes</span>
@@ -136,7 +138,7 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
 
       {formData.knowRentalDuration === 'yes' && (
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="estimatedRentalDuration">
+          <label className="form-label" htmlFor="estimatedRentalDuration">
             Estimated rental duration (in months)
           </label>
           <Input
@@ -149,46 +151,43 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
             max="72"
             step="1"
           />
-          {errors.estimatedRentalDuration && <p className="text-red-500 text-xs italic">{errors.estimatedRentalDuration}</p>}
+          {errors.estimatedRentalDuration && <p className="form-error">{errors.estimatedRentalDuration}</p>}
         </div>
       )}
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">How soon do you need it installed?</label>
+        <label className="form-label">How soon do you need it installed?</label>
         <Select
           name="installationTimeframe"
           value={formData.installationTimeframe}
           onChange={(e) => onChange('installationTimeframe', e.target.value)}
         >
           <option value="">Select timeframe</option>
-          <option value="Immediately">Immediately</option>
-          <option value="Within a week">Within a week</option>
-          <option value="Within two weeks">Within two weeks</option>
-          <option value="Within a month">Within a month</option>
-          <option value="No rush">No rush</option>
+          <option value="Within 24 hours">Within 24 hours</option>
+          <option value="Within 2 days">Within 2 days</option>
+          <option value="Within 3 days">Within 3 days</option>
+          <option value="Within 1 week">Within 1 week</option>
+          <option value="Over 1 week">Over 1 week</option>
         </Select>
-        {errors.installationTimeframe && <p className="text-red-500 text-xs italic">{errors.installationTimeframe}</p>}
+        {errors.installationTimeframe && <p className="form-error">{errors.installationTimeframe}</p>}
       </div>
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">Mobility aids to be used with the ramp</label>
-        {['Wheelchair', 'Motorized scooter', 'Walker/cane', 'None'].map((aid) => (
-          <div key={aid}>
-            <label className="inline-flex items-center">
-              <Checkbox
-                name="mobilityAids"
-                value={aid}
+        <label className="form-label">Mobility aids to be used with the ramp</label>
+        <div className="space-y-3">
+          {['Wheelchair', 'Motorized scooter', 'Walker/cane', 'None'].map((aid) => (
+            <label key={aid} className="flex items-center">
+              <input
+                type="checkbox"
                 checked={formData.mobilityAids.includes(aid)}
-                onCheckedChange={(checked) => {
-                  const newMobilityAids = checked
-                    ? [...formData.mobilityAids, aid]
-                    : formData.mobilityAids.filter((item) => item !== aid);
-                  onChange('mobilityAids', newMobilityAids);
-                }}
+                onChange={() => handleMobilityAidChange(aid)}
+                className="form-checkbox"
               />
-              <span className="ml-2">{aid}</span>
+              <span className="ml-3 text-input">
+                {aid}
+              </span>
             </label>
-          </div>
-        ))}
-        {errors.mobilityAids && <p className="text-red-500 text-xs italic">{errors.mobilityAids}</p>}
+          ))}
+        </div>
+        {errors.mobilityAids && <p className="form-error">{errors.mobilityAids}</p>}
       </div>
       <FormField
         label="Installation Address"
@@ -200,13 +199,24 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
         ref={addressInputRef}
         placeholder="Start typing an address..."
       />
-      <div className="flex items-center justify-between">
-        <Button type="button" onClick={onPrevPage} variant="secondary">
-          Previous
+      <div className="mt-8 space-y-4">
+        <Button 
+          type="submit" 
+          disabled={isSubmitting} 
+          onClick={onSubmit}
+          className="btn btn-primary w-full"
+        >
+          {isSubmitting ? <Spinner /> : 'Submit Request'}
         </Button>
-        <Button type="submit" disabled={isSubmitting} onClick={onSubmit}>
-          {isSubmitting ? 'Submitting...' : 'Submit Request'}
-        </Button>
+        <div className="flex justify-center">
+          <button 
+            type="button" 
+            onClick={onPrevPage} 
+            className="text-blue-600 hover:text-blue-800 underline"
+          >
+            Previous
+          </button>
+        </div>
       </div>
     </div>
   );

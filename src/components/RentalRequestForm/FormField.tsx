@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import { Input } from '../ui/Input';
+import { cn } from '../../lib/utils'; // Make sure this import is correct
 
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -9,24 +10,24 @@ interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ label, name, error, options, ...props }, ref) => {
+  ({ label, name, error, options, className, ...props }, ref) => {
     return (
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor={name}>
+        <label className="form-label" htmlFor={name}>
           {label}
         </label>
         {options ? (
-          <div>
+          <div className="space-y-2">
             {options.map((option) => (
-              <label key={option.value} className="inline-flex items-center mr-4">
+              <label key={option.value} className="inline-flex items-center">
                 <input
                   type="radio"
                   name={name}
                   value={option.value}
                   {...props}
-                  className="form-radio"
+                  className="form-radio h-5 w-5"
                 />
-                <span className="ml-2">{option.label}</span>
+                <span className="ml-2 text-input">{option.label}</span>
               </label>
             ))}
           </div>
@@ -35,10 +36,11 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
             id={name}
             name={name}
             ref={ref}
+            className={cn("form-input", className)}
             {...props}
           />
         )}
-        {error && <p className="text-red-500 text-xs italic">{error}</p>}
+        {error && <p className="form-error">{error}</p>}
       </div>
     );
   }

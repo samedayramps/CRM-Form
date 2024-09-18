@@ -1,11 +1,6 @@
 import React from 'react';
-import { Button } from '../ui/Button';
 
-interface ConfirmationPageProps {
-  onStartOver: () => void;
-}
-
-export const ConfirmationPage: React.FC<ConfirmationPageProps> = ({ onStartOver }) => {
+export const ConfirmationPage: React.FC = () => {
   return (
     <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
       <h2 className="text-2xl font-bold mb-4 text-green-600">Thank You!</h2>
@@ -18,7 +13,6 @@ export const ConfirmationPage: React.FC<ConfirmationPageProps> = ({ onStartOver 
       <p className="mb-6">
         If you have any immediate questions or concerns, please don't hesitate to contact us directly.
       </p>
-      <Button onClick={onStartOver}>Submit Another Request</Button>
     </div>
   );
 };

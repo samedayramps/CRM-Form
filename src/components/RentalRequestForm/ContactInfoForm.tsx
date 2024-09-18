@@ -45,8 +45,8 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Contact Information</h2>
+    <div className="space-y-4">
+      <h2 className="text-3xl font-bold mb-6">Contact Information</h2>
       <FormField
         label="First Name"
         name="firstName"
@@ -81,8 +81,12 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
         error={errors.phone}
         required
       />
-      <div className="flex items-center justify-between">
-        <Button type="button" onClick={handleNextPage}>
+      <div className="flex justify-center mt-6">
+        <Button 
+          type="button" 
+          onClick={handleNextPage} 
+          className="btn btn-primary"
+        >
           Next
         </Button>
       </div>

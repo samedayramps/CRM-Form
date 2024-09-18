@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ContactInfoForm } from './ContactInfoForm';
 import { RampDetailsForm } from './RampDetailsForm';
 import { ConfirmationPage } from './ConfirmationPage';
@@ -37,7 +37,32 @@ export const RentalRequestForm: React.FC = () => {
     }
   };
 
-  
+  const sendHeight = useCallback(() => {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ type: 'setHeight', height }, '*');
+  }, []);
+
+  useEffect(() => {
+    sendHeight();
+
+    const resizeObserver = new ResizeObserver(() => {
+      sendHeight();
+    });
+
+    resizeObserver.observe(document.body);
+
+    window.addEventListener('load', sendHeight);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('load', sendHeight);
+    };
+  }, [sendHeight]);
+
+  useEffect(() => {
+    sendHeight();
+  }, [currentPage, formData, sendHeight]);
+
   const handleNextPage = () => {
     setCurrentPage(prevPage => prevPage + 1);
   };
@@ -54,7 +79,7 @@ export const RentalRequestForm: React.FC = () => {
       try {
         const response: RentalRequestResponse = await submitRentalRequest(formData);
         console.log('Form submitted successfully:', response);
-        setCurrentPage(3); // Move to the confirmation page
+        setCurrentPage(2); // Move to the confirmation page
       } catch (error) {
         console.error('Error submitting form:', error);
         setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred');
@@ -64,22 +89,7 @@ export const RentalRequestForm: React.FC = () => {
     }
   };
 
-  const handleStartOver = () => {
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      knowRampLength: 'no',
-      estimatedRampLength: '',
-      knowRentalDuration: 'no',
-      estimatedRentalDuration: '',
-      installationTimeframe: '',
-      mobilityAids: [],
-      installAddress: '',
-    });
-    setCurrentPage(0);
-  };
+  // Remove handleStartOver function as it's no longer needed
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -95,35 +105,37 @@ export const RentalRequestForm: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10">
-      {currentPage < 3 ? (
-        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          {currentPage === 0 && (
-            <ContactInfoForm
-              formData={formData}
-              errors={errors}
-              onChange={handleChange}
-              onNextPage={handleNextPage}
-            />
-          )}
-          {currentPage === 1 && (
-            <RampDetailsForm
-              formData={formData}
-              errors={errors}
-              onChange={handleChange}
-              onPrevPage={handlePrevPage}
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-            />
-          )}
+    <div className="rental-form-container w-full max-w-lg mx-auto py-4 px-4 sm:px-6 lg:px-8">
+      {currentPage < 2 ? (
+        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg px-6 py-8 mb-4">
+          <div className="mb-6">
+            {currentPage === 0 && (
+              <ContactInfoForm
+                formData={formData}
+                errors={errors}
+                onChange={handleChange}
+                onNextPage={handleNextPage}
+              />
+            )}
+            {currentPage === 1 && (
+              <RampDetailsForm
+                formData={formData}
+                errors={errors}
+                onChange={handleChange}
+                onPrevPage={handlePrevPage}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+              />
+            )}
+          </div>
           {submitError && (
-            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
               Error: {submitError}
             </div>
           )}
         </form>
       ) : (
-        <ConfirmationPage onStartOver={handleStartOver} />
+        <ConfirmationPage />
       )}
     </div>
   );
