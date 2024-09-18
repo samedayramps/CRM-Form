@@ -8,9 +8,7 @@ module.exports = {
         primary: '#ebfd2a',
         'primary-dark': '#d9eb1e',
       },
-      fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', 'sans-serif'],
-      },
+      // Remove the fontFamily definition if it exists
       fontSize: {
         'input': '0.9375rem', // 15px
         'button': '1.0625rem', // 17px
