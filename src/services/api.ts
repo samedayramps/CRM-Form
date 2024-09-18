@@ -27,12 +27,15 @@ export interface RentalRequestResponse {
 
 export const submitRentalRequest = async (formData: RentalRequestFormData): Promise<RentalRequestResponse> => {
   try {
+    console.log('Submitting form data:', formData); // Add this line
     const response: AxiosResponse<RentalRequestResponse> = await api.post('/api/rental-requests', formData);
     return response.data;
   } catch (error) {
     console.error('Error submitting rental request:', error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('Server response:', error.response.data); // Add this line
+    }
     throw error;
   }
 };
-
 export default api;

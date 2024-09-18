@@ -40,7 +40,7 @@ module.exports = {
       directory: path.join(__dirname, 'public'),
     },
     compress: true,
-    port: 3002,
+    port: 3000,
     open: true,
   },
 };
@@ -110,6 +110,7 @@ module.exports = {
     "axios": "^1.7.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "cors": "^2.8.5",
     "lucide-react": "^0.436.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -302,33 +303,30 @@ declare global {
 
 ```ts
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { RentalRequestFormData } from '../components/RentalRequestForm/types';
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://samedayramps-016e8e090b17.herokuapp.com',
+  baseURL: process.env.REACT_APP_API_URL || 'https://app.samedayramps.com',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
 });
 
-export interface RentalRequestFormData {
+export interface RentalRequestResponse {
+  _id: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   knowRampLength: string;
-  estimatedRampLength: string;
+  estimatedRampLength?: string;
   knowRentalDuration: string;
-  estimatedRentalDuration: string;
+  estimatedRentalDuration?: string;
   installationTimeframe: string;
   mobilityAids: string[];
   installAddress: string;
-}
-
-export interface RentalRequestResponse {
-  message: string;
-  customerId: string;
-  jobId: string;
+  createdAt: string;
 }
 
 export const submitRentalRequest = async (formData: RentalRequestFormData): Promise<RentalRequestResponse> => {
@@ -355,175 +353,54 @@ export function cn(...inputs: ClassValue[]) {
 }
 ```
 
-# src/components/ui/Select.tsx
+# src/components/RentalRequestForm/validation.ts
 
-```tsx
-import * as React from "react"
+```ts
+import { RentalRequestFormData, FormErrors } from './types';
 
-import { cn } from "../../lib/utils"
+export const validateContactInfo = (formData: RentalRequestFormData): FormErrors => {
+  const errors: FormErrors = {};
 
-export interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {}
-
-const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <select
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    )
+  if (!formData.firstName.trim()) {
+    errors.firstName = 'First name is required';
   }
-)
-Select.displayName = "Select"
 
-export { Select }
-```
-
-# src/components/ui/Input.tsx
-
-```tsx
-import * as React from "react"
-
-import { cn } from "../../lib/utils"
-
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
-
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
-    return (
-      <input
-        type={type}
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    )
+  if (!formData.lastName.trim()) {
+    errors.lastName = 'Last name is required';
   }
-)
-Input.displayName = "Input"
 
-export { Input }
-```
-
-# src/components/ui/Checkbox.tsx
-
-```tsx
-// src/components/ui/checkbox.tsx
-
-import * as React from "react"
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { Check } from "lucide-react"
-
-import { cn } from "../../lib/utils"
-
-const Checkbox = React.forwardRef<
-  React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(
-      "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
-      className
-    )}
-    {...props}
-  >
-    <CheckboxPrimitive.Indicator className={cn("flex items-center justify-center text-current")}>
-      <Check className="h-4 w-4" />
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-))
-Checkbox.displayName = CheckboxPrimitive.Root.displayName
-
-export { Checkbox }
-```
-
-# src/components/ui/Button.tsx
-
-```tsx
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-
-import { cn } from "../../lib/utils"
-
-const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
+  if (!formData.email.trim()) {
+    errors.email = 'Email is required';
+  } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    errors.email = 'Invalid email format';
   }
-)
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
-}
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    )
+  if (!formData.phone.trim()) {
+    errors.phone = 'Phone number is required';
+  } else if (!/^\(\d{3}\) \d{3}-\d{4}$/.test(formData.phone)) {
+    errors.phone = 'Invalid phone number format';
   }
-)
-Button.displayName = "Button"
 
-export { Button, buttonVariants }
+  return errors;
+};
 ```
 
 # src/components/RentalRequestForm/types.ts
 
 ```ts
 export interface RentalRequestFormData {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    knowRampLength: string;
-    estimatedRampLength: string;
-    knowRentalDuration: string;
-    estimatedRentalDuration: string;
-    installationTimeframe: string;
-    mobilityAids: string[];
-    installAddress: string;
-  }
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  knowRampLength: string;
+  estimatedRampLength: string;
+  knowRentalDuration: string;
+  estimatedRentalDuration: string;
+  installationTimeframe: string;
+  mobilityAids: string[];
+  installAddress: string;
+}
   
   export interface FormErrors {
     firstName?: string;
@@ -539,7 +416,11 @@ export interface RentalRequestFormData {
     installAddress?: string;
   }
   
-  export type FormChangeHandler = (name: keyof RentalRequestFormData, value: string | string[]) => void;
+  export type FormChangeHandler = (
+    field: keyof RentalRequestFormData,
+    value: string | string[],
+    error?: string
+  ) => void;
 ```
 
 # src/components/RentalRequestForm/RentalRequestForm.tsx
@@ -552,8 +433,7 @@ import { ConfirmationPage } from './ConfirmationPage';
 import { RentalRequestFormData, FormErrors, FormChangeHandler } from './types';
 import { submitRentalRequest, RentalRequestResponse } from '../../services/api';
 
-const RentalRequestForm: React.FC = () => {
-  const [page, setPage] = useState(1);
+export const RentalRequestForm: React.FC = () => {
   const [formData, setFormData] = useState<RentalRequestFormData>({
     firstName: '',
     lastName: '',
@@ -570,25 +450,27 @@ const RentalRequestForm: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const handleInputChange: FormChangeHandler = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const validateForm = (): boolean => {
-    // Implement your form validation logic here
-    // Return true if the form is valid, false otherwise
-    return true;
-  };
-
-  const handleNextPage = () => {
-    if (validateForm()) {
-      setPage(prev => prev + 1);
+  const handleChange: FormChangeHandler = (field, value, error?) => {
+    setFormData(prevData => ({ ...prevData, [field]: value }));
+    if (error !== undefined) {
+      setErrors(prevErrors => ({ ...prevErrors, [field]: error }));
+    } else {
+      setErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
+  const handleNextPage = () => {
+    setCurrentPage(prevPage => prevPage + 1);
+  };
+
   const handlePrevPage = () => {
-    setPage(prev => prev - 1);
+    setCurrentPage(prevPage => prevPage - 1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -599,7 +481,7 @@ const RentalRequestForm: React.FC = () => {
       try {
         const response: RentalRequestResponse = await submitRentalRequest(formData);
         console.log('Form submitted successfully:', response);
-        setPage(3); // Move to the confirmation page
+        setCurrentPage(3); // Move to the confirmation page
       } catch (error) {
         console.error('Error submitting form:', error);
         setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred');
@@ -623,26 +505,39 @@ const RentalRequestForm: React.FC = () => {
       mobilityAids: [],
       installAddress: '',
     });
-    setPage(1);
+    setCurrentPage(0);
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    if (!formData.installationTimeframe) newErrors.installationTimeframe = 'Installation timeframe is required';
+    if (!formData.installAddress) newErrors.installAddress = 'Installation address is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   return (
     <div className="max-w-md mx-auto mt-10">
-      {page < 3 ? (
+      {currentPage < 3 ? (
         <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          {page === 1 && (
+          {currentPage === 0 && (
             <ContactInfoForm
               formData={formData}
               errors={errors}
-              onChange={handleInputChange}
+              onChange={handleChange}
               onNextPage={handleNextPage}
             />
           )}
-          {page === 2 && (
+          {currentPage === 1 && (
             <RampDetailsForm
               formData={formData}
               errors={errors}
-              onChange={handleInputChange}
+              onChange={handleChange}
               onPrevPage={handlePrevPage}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}
@@ -941,6 +836,7 @@ import React from 'react';
 import { FormField } from './FormField';
 import { Button } from '../ui/Button';
 import { RentalRequestFormData, FormErrors, FormChangeHandler } from './types';
+import { validateContactInfo } from './validation'; // We'll create this file later
 
 interface ContactInfoFormProps {
   formData: RentalRequestFormData;
@@ -968,6 +864,18 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
       return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
     }
     return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+  };
+
+  const handleNextPage = () => {
+    const validationErrors = validateContactInfo(formData);
+    if (Object.keys(validationErrors).length === 0) {
+      onNextPage();
+    } else {
+      // Update errors state in parent component
+      Object.entries(validationErrors).forEach(([field, error]) => {
+        onChange(field as keyof RentalRequestFormData, formData[field as keyof RentalRequestFormData], error);
+      });
+    }
   };
 
   return (
@@ -1008,7 +916,7 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
         required
       />
       <div className="flex items-center justify-between">
-        <Button type="button" onClick={onNextPage}>
+        <Button type="button" onClick={handleNextPage}>
           Next
         </Button>
       </div>
@@ -1044,5 +952,158 @@ export const ConfirmationPage: React.FC<ConfirmationPageProps> = ({ onStartOver 
     </div>
   );
 };
+```
+
+# src/components/ui/Select.tsx
+
+```tsx
+import * as React from "react"
+
+import { cn } from "../../lib/utils"
+
+export interface SelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {}
+
+const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+  ({ className, ...props }, ref) => {
+    return (
+      <select
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Select.displayName = "Select"
+
+export { Select }
+```
+
+# src/components/ui/Input.tsx
+
+```tsx
+import * as React from "react"
+
+import { cn } from "../../lib/utils"
+
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
+
+export { Input }
+```
+
+# src/components/ui/Checkbox.tsx
+
+```tsx
+// src/components/ui/checkbox.tsx
+
+import * as React from "react"
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+import { Check } from "lucide-react"
+
+import { cn } from "../../lib/utils"
+
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={cn(
+      "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      className
+    )}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator className={cn("flex items-center justify-center text-current")}>
+      <Check className="h-4 w-4" />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+))
+Checkbox.displayName = CheckboxPrimitive.Root.displayName
+
+export { Checkbox }
+```
+
+# src/components/ui/Button.tsx
+
+```tsx
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "../../lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
 ```
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { FormField } from './FormField';
 import { Button } from '../ui/Button';
 import { RentalRequestFormData, FormErrors, FormChangeHandler } from './types';
+import { validateContactInfo } from './validation'; // We'll create this file later
 
 interface ContactInfoFormProps {
   formData: RentalRequestFormData;
@@ -29,6 +30,18 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
       return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
     }
     return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
+  };
+
+  const handleNextPage = () => {
+    const validationErrors = validateContactInfo(formData);
+    if (Object.keys(validationErrors).length === 0) {
+      onNextPage();
+    } else {
+      // Update errors state in parent component
+      Object.entries(validationErrors).forEach(([field, error]) => {
+        onChange(field as keyof RentalRequestFormData, formData[field as keyof RentalRequestFormData], error);
+      });
+    }
   };
 
   return (
@@ -69,7 +82,7 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
         required
       />
       <div className="flex items-center justify-between">
-        <Button type="button" onClick={onNextPage}>
+        <Button type="button" onClick={handleNextPage}>
           Next
         </Button>
       </div>

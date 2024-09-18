@@ -5,8 +5,7 @@ import { ConfirmationPage } from './ConfirmationPage';
 import { RentalRequestFormData, FormErrors, FormChangeHandler } from './types';
 import { submitRentalRequest, RentalRequestResponse } from '../../services/api';
 
-const RentalRequestForm: React.FC = () => {
-  const [page, setPage] = useState(1);
+export const RentalRequestForm: React.FC = () => {
   const [formData, setFormData] = useState<RentalRequestFormData>({
     firstName: '',
     lastName: '',
@@ -23,32 +22,27 @@ const RentalRequestForm: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const handleInputChange: FormChangeHandler = (name, value) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-    if (!formData.firstName) newErrors.firstName = 'First name is required';
-    if (!formData.lastName) newErrors.lastName = 'Last name is required';
-    if (!formData.email) newErrors.email = 'Email is required';
-    if (!formData.phone) newErrors.phone = 'Phone number is required';
-    if (!formData.installationTimeframe) newErrors.installationTimeframe = 'Installation timeframe is required';
-    if (!formData.installAddress) newErrors.installAddress = 'Installation address is required';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNextPage = () => {
-    if (validateForm()) {
-      setPage(prev => prev + 1);
+  const handleChange: FormChangeHandler = (field, value, error?) => {
+    setFormData(prevData => ({ ...prevData, [field]: value }));
+    if (error !== undefined) {
+      setErrors(prevErrors => ({ ...prevErrors, [field]: error }));
+    } else {
+      setErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
+  const handleNextPage = () => {
+    setCurrentPage(prevPage => prevPage + 1);
+  };
+
   const handlePrevPage = () => {
-    setPage(prev => prev - 1);
+    setCurrentPage(prevPage => prevPage - 1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,7 +53,7 @@ const RentalRequestForm: React.FC = () => {
       try {
         const response: RentalRequestResponse = await submitRentalRequest(formData);
         console.log('Form submitted successfully:', response);
-        setPage(3); // Move to the confirmation page
+        setCurrentPage(3); // Move to the confirmation page
       } catch (error) {
         console.error('Error submitting form:', error);
         setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred');
@@ -83,26 +77,39 @@ const RentalRequestForm: React.FC = () => {
       mobilityAids: [],
       installAddress: '',
     });
-    setPage(1);
+    setCurrentPage(0);
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    if (!formData.installationTimeframe) newErrors.installationTimeframe = 'Installation timeframe is required';
+    if (!formData.installAddress) newErrors.installAddress = 'Installation address is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   return (
     <div className="max-w-md mx-auto mt-10">
-      {page < 3 ? (
+      {currentPage < 3 ? (
         <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          {page === 1 && (
+          {currentPage === 0 && (
             <ContactInfoForm
               formData={formData}
               errors={errors}
-              onChange={handleInputChange}
+              onChange={handleChange}
               onNextPage={handleNextPage}
             />
           )}
-          {page === 2 && (
+          {currentPage === 1 && (
             <RampDetailsForm
               formData={formData}
               errors={errors}
-              onChange={handleInputChange}
+              onChange={handleChange}
               onPrevPage={handlePrevPage}
               onSubmit={handleSubmit}
               isSubmitting={isSubmitting}

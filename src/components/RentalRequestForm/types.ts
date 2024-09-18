@@ -26,4 +26,8 @@ export interface RentalRequestFormData {
     installAddress?: string;
   }
   
-  export type FormChangeHandler = (name: keyof RentalRequestFormData, value: string | string[]) => void;
+  export type FormChangeHandler = (
+    field: keyof RentalRequestFormData,
+    value: string | string[],
+    error?: string
+  ) => void;
