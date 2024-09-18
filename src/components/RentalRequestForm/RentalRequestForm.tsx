@@ -37,6 +37,7 @@ export const RentalRequestForm: React.FC = () => {
     }
   };
 
+  
   const handleNextPage = () => {
     setCurrentPage(prevPage => prevPage + 1);
   };
