@@ -73,10 +73,31 @@ module.exports = {
 # tailwind.config.js
 
 ```js
+const colors = require('tailwindcss/colors')
+
 module.exports = {
   content: ['./src/**/*.{js,jsx,ts,tsx}'],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: '#ebfd2a',
+        'primary-dark': '#d9eb1e',
+      },
+      // Remove the fontFamily definition if it exists
+      fontSize: {
+        'input': '0.9375rem', // 15px
+        'button': '1.0625rem', // 17px
+      },
+      padding: {
+        'input': '0.75rem 1rem',
+        'button': '1rem 1.5rem',
+      },
+      spacing: {
+        'form-element': '0.75rem',
+        'form-group': '1.5rem',
+        'form-section': '2rem',
+      },
+    },
   },
   plugins: [],
 };
@@ -182,6 +203,44 @@ if (container) {
 </head>
 <body>
     <div id="standalone-rental-form"></div>
+</body>
+</html>
+```
+
+# public/embed.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rental Request Form</title>
+    <script src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+    <script src="path/to/your/bundled/app.js"></script>
+    <link rel="stylesheet" href="path/to/your/styles.css">
+    <script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+            const parentFont = window.getComputedStyle(window.parent.document.body).getPropertyValue('font-family');
+            document.body.style.fontFamily = parentFont;
+        });
+    </script>
+</head>
+<body>
+    <div id="rental-form-root"></div>
+    <script>
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'setHeight') {
+                document.getElementById('rental-form-root').style.height = e.data.height + 'px';
+            }
+        }, false);
+
+        ReactDOM.render(
+            React.createElement(RentalRequestForm),
+            document.getElementById('rental-form-root')
+        );
+    </script>
 </body>
 </html>
 ```
@@ -296,7 +355,99 @@ declare global {
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Add any custom styles here */
+:root {
+  --font-size-base: 0.9375rem; /* Reduced from 1.125rem */
+  --font-size-lg: 1.0625rem; /* Reduced from 1.25rem */
+  --font-size-xl: 1.375rem; /* Reduced from 1.75rem */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --spacing-unit: 0.5rem;
+}
+
+body {
+  color: #1f2937;
+  line-height: 1.5;
+  font-size: var(--font-size-base);
+  font-family: inherit; /* This will inherit the font from the parent website */
+}
+
+h1 {
+  font-size: calc(var(--font-size-xl) + 0.25rem);
+  font-weight: var(--font-weight-bold);
+  color: #111827;
+  margin-bottom: calc(var(--spacing-unit) * 4);
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: #1f2937;
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 2);
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: var(--font-size-base);
+  height: calc(var(--spacing-unit) * 6);
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--spacing-unit);
+  font-weight: var(--font-weight-bold);
+  color: #374151;
+  font-size: var(--font-size-base);
+}
+
+.form-error {
+  margin-top: var(--spacing-unit);
+  font-size: calc(var(--font-size-base) - 0.0625rem);
+  color: #dc2626;
+}
+
+.btn {
+  padding: calc(var(--spacing-unit) * 1.5) calc(var(--spacing-unit) * 3);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  border-radius: 0.375rem;
+  transition: background-color 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(var(--spacing-unit) * 7);
+  text-align: center;
+}
+
+.form-checkbox {
+  height: calc(var(--spacing-unit) * 3);
+  width: calc(var(--spacing-unit) * 3);
+  margin-right: var(--spacing-unit);
+}
+
+.text-input {
+  font-size: var(--font-size-base);
+}
+
+.form-section {
+  margin-bottom: calc(var(--spacing-unit) * 4);
+}
+
+.form-group {
+  margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.form-actions {
+  margin-top: calc(var(--spacing-unit) * 4);
+}
+
+/* ... (rest of the styles remain the same) */
 ```
 
 # src/services/api.ts
@@ -311,6 +462,7 @@ const api: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true,
+  timeout: 10000, // 10 seconds timeout
 });
 
 export interface RentalRequestResponse {
@@ -331,13 +483,43 @@ export interface RentalRequestResponse {
 
 export const submitRentalRequest = async (formData: RentalRequestFormData): Promise<RentalRequestResponse> => {
   try {
-    const response: AxiosResponse<RentalRequestResponse> = await api.post('/api/rental-requests', formData);
+    console.log('Submitting form data:', formData);
+    const response: AxiosResponse<RentalRequestResponse> = await api.post('/api/rental-requests', formData, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
+    console.log('Server response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error submitting rental request:', error);
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        console.error('Server error response:', error.response.data);
+        console.error('Status code:', error.response.status);
+        console.error('Headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
+      console.error('Error config:', error.config);
+    }
     throw error;
   }
 };
+
+// Add an interceptor to log all requests
+api.interceptors.request.use(request => {
+  console.log('Starting Request', JSON.stringify(request, null, 2));
+  return request;
+});
+
+// Add an interceptor to log all responses
+api.interceptors.response.use(response => {
+  console.log('Response:', JSON.stringify(response, null, 2));
+  return response;
+});
 
 export default api;
 ```
@@ -351,6 +533,191 @@ import { twMerge } from "tailwind-merge"
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+```
+
+# src/components/ui/Spinner.tsx
+
+```tsx
+import React from 'react';
+
+export const Spinner: React.FC = () => (
+  <div className="flex justify-center items-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
+```
+
+# src/components/ui/Select.tsx
+
+```tsx
+import * as React from "react"
+
+import { cn } from "../../lib/utils"
+
+export interface SelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {}
+
+const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+  ({ className, ...props }, ref) => {
+    return (
+      <select
+        className={cn(
+          "form-select",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Select.displayName = "Select"
+
+export { Select }
+```
+
+# src/components/ui/Input.tsx
+
+```tsx
+import * as React from "react"
+
+import { cn } from "../../lib/utils"
+
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Input.displayName = "Input"
+
+export { Input }
+```
+
+# src/components/ui/CustomCheckbox.tsx
+
+```tsx
+import React from 'react';
+import { Checkbox } from './Checkbox';
+
+interface CheckboxProps extends React.ComponentPropsWithoutRef<typeof Checkbox> {
+  onCheckedChange?: (checked: boolean) => void;
+}
+
+export const CustomCheckbox: React.FC<CheckboxProps> = (props) => {
+  return (
+    <Checkbox
+      {...props}
+      className={`checkbox-custom ${props.className || ''}`}
+    />
+  );
+};
+```
+
+# src/components/ui/Checkbox.tsx
+
+```tsx
+// src/components/ui/checkbox.tsx
+
+import * as React from "react"
+import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
+import { Check } from "lucide-react"
+
+import { cn } from "../../lib/utils"
+
+const Checkbox = React.forwardRef<
+  React.ElementRef<typeof CheckboxPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <CheckboxPrimitive.Root
+    ref={ref}
+    className={cn(
+      "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
+      className
+    )}
+    {...props}
+  >
+    <CheckboxPrimitive.Indicator className={cn("flex items-center justify-center text-current")}>
+      <Check className="h-4 w-4" />
+    </CheckboxPrimitive.Indicator>
+  </CheckboxPrimitive.Root>
+))
+Checkbox.displayName = CheckboxPrimitive.Root.displayName
+
+export { Checkbox }
+```
+
+# src/components/ui/Button.tsx
+
+```tsx
+import * as React from "react"
+import { Slot } from "@radix-ui/react-slot"
+import { cva, type VariantProps } from "class-variance-authority"
+
+import { cn } from "../../lib/utils"
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline:
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-14 px-4 py-2", // Increased height
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+)
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+}
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+    return (
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+Button.displayName = "Button"
+
+export { Button, buttonVariants }
 ```
 
 # src/components/RentalRequestForm/validation.ts
@@ -426,7 +793,7 @@ export interface RentalRequestFormData {
 # src/components/RentalRequestForm/RentalRequestForm.tsx
 
 ```tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ContactInfoForm } from './ContactInfoForm';
 import { RampDetailsForm } from './RampDetailsForm';
 import { ConfirmationPage } from './ConfirmationPage';
@@ -465,6 +832,32 @@ export const RentalRequestForm: React.FC = () => {
     }
   };
 
+  const sendHeight = useCallback(() => {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ type: 'setHeight', height }, '*');
+  }, []);
+
+  useEffect(() => {
+    sendHeight();
+
+    const resizeObserver = new ResizeObserver(() => {
+      sendHeight();
+    });
+
+    resizeObserver.observe(document.body);
+
+    window.addEventListener('load', sendHeight);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('load', sendHeight);
+    };
+  }, [sendHeight]);
+
+  useEffect(() => {
+    sendHeight();
+  }, [currentPage, formData, sendHeight]);
+
   const handleNextPage = () => {
     setCurrentPage(prevPage => prevPage + 1);
   };
@@ -481,7 +874,7 @@ export const RentalRequestForm: React.FC = () => {
       try {
         const response: RentalRequestResponse = await submitRentalRequest(formData);
         console.log('Form submitted successfully:', response);
-        setCurrentPage(3); // Move to the confirmation page
+        setCurrentPage(2); // Move to the confirmation page
       } catch (error) {
         console.error('Error submitting form:', error);
         setSubmitError(error instanceof Error ? error.message : 'An unexpected error occurred');
@@ -491,22 +884,7 @@ export const RentalRequestForm: React.FC = () => {
     }
   };
 
-  const handleStartOver = () => {
-    setFormData({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      knowRampLength: 'no',
-      estimatedRampLength: '',
-      knowRentalDuration: 'no',
-      estimatedRentalDuration: '',
-      installationTimeframe: '',
-      mobilityAids: [],
-      installAddress: '',
-    });
-    setCurrentPage(0);
-  };
+  // Remove handleStartOver function as it's no longer needed
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -522,35 +900,38 @@ export const RentalRequestForm: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10">
-      {currentPage < 3 ? (
-        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          {currentPage === 0 && (
-            <ContactInfoForm
-              formData={formData}
-              errors={errors}
-              onChange={handleChange}
-              onNextPage={handleNextPage}
-            />
-          )}
-          {currentPage === 1 && (
-            <RampDetailsForm
-              formData={formData}
-              errors={errors}
-              onChange={handleChange}
-              onPrevPage={handlePrevPage}
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-            />
-          )}
+    <div className="rental-form-container w-full max-w-lg mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-center">Ramp Request Form</h1>
+      {currentPage < 2 ? (
+        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6">
+          <div className="form-section">
+            {currentPage === 0 && (
+              <ContactInfoForm
+                formData={formData}
+                errors={errors}
+                onChange={handleChange}
+                onNextPage={handleNextPage}
+              />
+            )}
+            {currentPage === 1 && (
+              <RampDetailsForm
+                formData={formData}
+                errors={errors}
+                onChange={handleChange}
+                onPrevPage={handlePrevPage}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+              />
+            )}
+          </div>
           {submitError && (
-            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
               Error: {submitError}
             </div>
           )}
         </form>
       ) : (
-        <ConfirmationPage onStartOver={handleStartOver} />
+        <ConfirmationPage />
       )}
     </div>
   );
@@ -567,7 +948,7 @@ import { FormField } from './FormField';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
-import { Checkbox } from '../ui/Checkbox';
+import { Spinner } from '../ui/Spinner';
 import { RentalRequestFormData, FormErrors, FormChangeHandler } from './types';
 import { loadGoogleMapsAPI } from '../../utils/googleMapsLoader';
 
@@ -610,24 +991,29 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
     });
   }, [onChange]);
 
+  const handleMobilityAidChange = (aid: string) => {
+    const newMobilityAids = formData.mobilityAids.includes(aid)
+      ? formData.mobilityAids.filter(item => item !== aid)
+      : [...formData.mobilityAids, aid];
+    onChange('mobilityAids', newMobilityAids);
+  };
+
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Ramp Details</h2>
-      <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Do you know how long of a ramp you need?
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold mb-4">Ramp Details</h2>
+      
+      <div className="space-y-2">
+        <label className="form-label">
+          Do you know the required ramp length?
         </label>
-        <div>
-          <label className="inline-flex items-center mr-4">
+        <div className="space-x-4">
+          <label className="inline-flex items-center">
             <input
               type="radio"
               name="knowRampLength"
               value="yes"
               checked={formData.knowRampLength === 'yes'}
-              onChange={(e) => {
-                console.log('Ramp length changed to:', e.target.value); // Debug log
-                onChange('knowRampLength', e.target.value);
-              }}
+              onChange={(e) => onChange('knowRampLength', e.target.value)}
               className="form-radio"
             />
             <span className="ml-2">Yes</span>
@@ -648,7 +1034,7 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
       
       {formData.knowRampLength === 'yes' && (
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="estimatedRampLength">
+          <label className="form-label" htmlFor="estimatedRampLength">
             Estimated ramp length required (in feet)
           </label>
           <Input
@@ -661,25 +1047,22 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
             max="60"
             step="1"
           />
-          {errors.estimatedRampLength && <p className="text-red-500 text-xs italic">{errors.estimatedRampLength}</p>}
+          {errors.estimatedRampLength && <p className="form-error">{errors.estimatedRampLength}</p>}
         </div>
       )}
 
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">
-          Do you know how long you need the ramp?
+        <label className="form-label">
+          Do you know the duration of the rental?
         </label>
-        <div>
-          <label className="inline-flex items-center mr-4">
+        <div className="space-x-4">
+          <label className="inline-flex items-center">
             <input
               type="radio"
               name="knowRentalDuration"
               value="yes"
               checked={formData.knowRentalDuration === 'yes'}
-              onChange={(e) => {
-                console.log('Rental duration changed to:', e.target.value); // Debug log
-                onChange('knowRentalDuration', e.target.value);
-              }}
+              onChange={(e) => onChange('knowRentalDuration', e.target.value)}
               className="form-radio"
             />
             <span className="ml-2">Yes</span>
@@ -700,7 +1083,7 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
 
       {formData.knowRentalDuration === 'yes' && (
         <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="estimatedRentalDuration">
+          <label className="form-label" htmlFor="estimatedRentalDuration">
             Estimated rental duration (in months)
           </label>
           <Input
@@ -713,46 +1096,43 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
             max="72"
             step="1"
           />
-          {errors.estimatedRentalDuration && <p className="text-red-500 text-xs italic">{errors.estimatedRentalDuration}</p>}
+          {errors.estimatedRentalDuration && <p className="form-error">{errors.estimatedRentalDuration}</p>}
         </div>
       )}
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">How soon do you need it installed?</label>
+        <label className="form-label">How soon do you need it installed?</label>
         <Select
           name="installationTimeframe"
           value={formData.installationTimeframe}
           onChange={(e) => onChange('installationTimeframe', e.target.value)}
         >
           <option value="">Select timeframe</option>
-          <option value="Immediately">Immediately</option>
-          <option value="Within a week">Within a week</option>
-          <option value="Within two weeks">Within two weeks</option>
-          <option value="Within a month">Within a month</option>
-          <option value="No rush">No rush</option>
+          <option value="Within 24 hours">Within 24 hours</option>
+          <option value="Within 2 days">Within 2 days</option>
+          <option value="Within 3 days">Within 3 days</option>
+          <option value="Within 1 week">Within 1 week</option>
+          <option value="Over 1 week">Over 1 week</option>
         </Select>
-        {errors.installationTimeframe && <p className="text-red-500 text-xs italic">{errors.installationTimeframe}</p>}
+        {errors.installationTimeframe && <p className="form-error">{errors.installationTimeframe}</p>}
       </div>
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2">Mobility aids to be used with the ramp</label>
-        {['Wheelchair', 'Motorized scooter', 'Walker/cane', 'None'].map((aid) => (
-          <div key={aid}>
-            <label className="inline-flex items-center">
-              <Checkbox
-                name="mobilityAids"
-                value={aid}
+        <label className="form-label">Mobility aids to be used with the ramp</label>
+        <div className="space-y-3">
+          {['Wheelchair', 'Motorized scooter', 'Walker/cane', 'None'].map((aid) => (
+            <label key={aid} className="flex items-center">
+              <input
+                type="checkbox"
                 checked={formData.mobilityAids.includes(aid)}
-                onCheckedChange={(checked) => {
-                  const newMobilityAids = checked
-                    ? [...formData.mobilityAids, aid]
-                    : formData.mobilityAids.filter((item) => item !== aid);
-                  onChange('mobilityAids', newMobilityAids);
-                }}
+                onChange={() => handleMobilityAidChange(aid)}
+                className="form-checkbox"
               />
-              <span className="ml-2">{aid}</span>
+              <span className="ml-3 text-input">
+                {aid}
+              </span>
             </label>
-          </div>
-        ))}
-        {errors.mobilityAids && <p className="text-red-500 text-xs italic">{errors.mobilityAids}</p>}
+          ))}
+        </div>
+        {errors.mobilityAids && <p className="form-error">{errors.mobilityAids}</p>}
       </div>
       <FormField
         label="Installation Address"
@@ -764,13 +1144,24 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
         ref={addressInputRef}
         placeholder="Start typing an address..."
       />
-      <div className="flex items-center justify-between">
-        <Button type="button" onClick={onPrevPage} variant="secondary">
-          Previous
+      <div className="mt-8 space-y-4">
+        <Button 
+          type="submit" 
+          disabled={isSubmitting} 
+          onClick={onSubmit}
+          className="btn btn-primary w-full"
+        >
+          {isSubmitting ? <Spinner /> : 'Submit Request'}
         </Button>
-        <Button type="submit" disabled={isSubmitting} onClick={onSubmit}>
-          {isSubmitting ? 'Submitting...' : 'Submit Request'}
-        </Button>
+        <div className="flex justify-center">
+          <button 
+            type="button" 
+            onClick={onPrevPage} 
+            className="text-blue-600 hover:text-blue-800 underline"
+          >
+            Previous
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -782,6 +1173,7 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
 ```tsx
 import React, { forwardRef } from 'react';
 import { Input } from '../ui/Input';
+import { cn } from '../../lib/utils'; // Make sure this import is correct
 
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -791,24 +1183,24 @@ interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ label, name, error, options, ...props }, ref) => {
+  ({ label, name, error, options, className, ...props }, ref) => {
     return (
       <div className="mb-4">
-        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor={name}>
+        <label className="form-label" htmlFor={name}>
           {label}
         </label>
         {options ? (
-          <div>
+          <div className="space-y-2">
             {options.map((option) => (
-              <label key={option.value} className="inline-flex items-center mr-4">
+              <label key={option.value} className="inline-flex items-center">
                 <input
                   type="radio"
                   name={name}
                   value={option.value}
                   {...props}
-                  className="form-radio"
+                  className="form-radio h-5 w-5"
                 />
-                <span className="ml-2">{option.label}</span>
+                <span className="ml-2 text-input">{option.label}</span>
               </label>
             ))}
           </div>
@@ -817,10 +1209,11 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
             id={name}
             name={name}
             ref={ref}
+            className={cn("form-input", className)}
             {...props}
           />
         )}
-        {error && <p className="text-red-500 text-xs italic">{error}</p>}
+        {error && <p className="form-error">{error}</p>}
       </div>
     );
   }
@@ -879,8 +1272,8 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Contact Information</h2>
+    <div className="space-y-4">
+      <h2 className="text-2xl font-semibold mb-4">Contact Information</h2>
       <FormField
         label="First Name"
         name="firstName"
@@ -915,8 +1308,12 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
         error={errors.phone}
         required
       />
-      <div className="flex items-center justify-between">
-        <Button type="button" onClick={handleNextPage}>
+      <div className="flex justify-center mt-6">
+        <Button 
+          type="button" 
+          onClick={handleNextPage} 
+          className="btn btn-primary"
+        >
           Next
         </Button>
       </div>
@@ -929,13 +1326,8 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
 
 ```tsx
 import React from 'react';
-import { Button } from '../ui/Button';
 
-interface ConfirmationPageProps {
-  onStartOver: () => void;
-}
-
-export const ConfirmationPage: React.FC<ConfirmationPageProps> = ({ onStartOver }) => {
+export const ConfirmationPage: React.FC = () => {
   return (
     <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
       <h2 className="text-2xl font-bold mb-4 text-green-600">Thank You!</h2>
@@ -948,162 +1340,8 @@ export const ConfirmationPage: React.FC<ConfirmationPageProps> = ({ onStartOver 
       <p className="mb-6">
         If you have any immediate questions or concerns, please don't hesitate to contact us directly.
       </p>
-      <Button onClick={onStartOver}>Submit Another Request</Button>
     </div>
   );
 };
-```
-
-# src/components/ui/Select.tsx
-
-```tsx
-import * as React from "react"
-
-import { cn } from "../../lib/utils"
-
-export interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {}
-
-const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <select
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-Select.displayName = "Select"
-
-export { Select }
-```
-
-# src/components/ui/Input.tsx
-
-```tsx
-import * as React from "react"
-
-import { cn } from "../../lib/utils"
-
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {}
-
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, ...props }, ref) => {
-    return (
-      <input
-        type={type}
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-Input.displayName = "Input"
-
-export { Input }
-```
-
-# src/components/ui/Checkbox.tsx
-
-```tsx
-// src/components/ui/checkbox.tsx
-
-import * as React from "react"
-import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
-import { Check } from "lucide-react"
-
-import { cn } from "../../lib/utils"
-
-const Checkbox = React.forwardRef<
-  React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <CheckboxPrimitive.Root
-    ref={ref}
-    className={cn(
-      "peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground",
-      className
-    )}
-    {...props}
-  >
-    <CheckboxPrimitive.Indicator className={cn("flex items-center justify-center text-current")}>
-      <Check className="h-4 w-4" />
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-))
-Checkbox.displayName = CheckboxPrimitive.Root.displayName
-
-export { Checkbox }
-```
-
-# src/components/ui/Button.tsx
-
-```tsx
-import * as React from "react"
-import { Slot } from "@radix-ui/react-slot"
-import { cva, type VariantProps } from "class-variance-authority"
-
-import { cn } from "../../lib/utils"
-
-const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-      },
-      size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
-
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
-  asChild?: boolean
-}
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button"
-    return (
-      <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
-Button.displayName = "Button"
-
-export { Button, buttonVariants }
 ```
 
