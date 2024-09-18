@@ -5,6 +5,7 @@ const api: AxiosInstance = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'https://app.samedayramps.com',
   headers: {
     'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   },
   withCredentials: true,
   timeout: 10000,
@@ -29,11 +30,7 @@ export interface RentalRequestResponse {
 export const submitRentalRequest = async (formData: RentalRequestFormData): Promise<RentalRequestResponse> => {
   try {
     console.log('Submitting form data:', formData);
-    const response: AxiosResponse<RentalRequestResponse> = await api.post('/api/rental-requests', formData, {
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-      },
-    });
+    const response: AxiosResponse<RentalRequestResponse> = await api.post('/api/rental-requests', formData);
     console.log('Server response:', response.data);
     return response.data;
   } catch (error) {
@@ -61,9 +58,15 @@ api.interceptors.request.use(request => {
 });
 
 // Add an interceptor to log all responses
-api.interceptors.response.use(response => {
-  console.log('Response:', JSON.stringify(response, null, 2));
-  return response;
-});
+api.interceptors.response.use(
+  response => {
+    console.log('Response:', JSON.stringify(response, null, 2));
+    return response;
+  },
+  error => {
+    console.error('Response Error:', error);
+    return Promise.reject(error);
+  }
+);
 
 export default api;
