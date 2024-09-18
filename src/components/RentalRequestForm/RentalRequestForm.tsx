@@ -29,9 +29,16 @@ const RentalRequestForm: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    // Implement your form validation logic here
-    // Return true if the form is valid, false otherwise
-    return true;
+    const newErrors: FormErrors = {};
+    if (!formData.firstName) newErrors.firstName = 'First name is required';
+    if (!formData.lastName) newErrors.lastName = 'Last name is required';
+    if (!formData.email) newErrors.email = 'Email is required';
+    if (!formData.phone) newErrors.phone = 'Phone number is required';
+    if (!formData.installationTimeframe) newErrors.installationTimeframe = 'Installation timeframe is required';
+    if (!formData.installAddress) newErrors.installAddress = 'Installation address is required';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleNextPage = () => {
