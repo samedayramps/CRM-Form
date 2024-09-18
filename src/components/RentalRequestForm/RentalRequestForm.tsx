@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ContactInfoForm } from './ContactInfoForm';
 import { RampDetailsForm } from './RampDetailsForm';
 import { ConfirmationPage } from './ConfirmationPage';
@@ -24,6 +24,8 @@ export const RentalRequestForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
 
+  const formRef = useRef<HTMLDivElement>(null);
+
   const handleChange: FormChangeHandler = (field, value, error?) => {
     setFormData(prevData => ({ ...prevData, [field]: value }));
     if (error !== undefined) {
@@ -38,8 +40,10 @@ export const RentalRequestForm: React.FC = () => {
   };
 
   const sendHeight = useCallback(() => {
-    const height = document.body.scrollHeight;
-    window.parent.postMessage({ type: 'setHeight', height }, '*');
+    if (formRef.current) {
+      const height = formRef.current.scrollHeight;
+      window.parent.postMessage({ type: 'setHeight', height: height + 50 }, '*'); // Add 50px buffer
+    }
   }, []);
 
   useEffect(() => {
@@ -49,18 +53,25 @@ export const RentalRequestForm: React.FC = () => {
       sendHeight();
     });
 
-    resizeObserver.observe(document.body);
+    if (formRef.current) {
+      resizeObserver.observe(formRef.current);
+    }
 
     window.addEventListener('load', sendHeight);
+    window.addEventListener('resize', sendHeight);
+
+    const intervalId = setInterval(sendHeight, 100); // Check height every 100ms
 
     return () => {
       resizeObserver.disconnect();
       window.removeEventListener('load', sendHeight);
+      window.removeEventListener('resize', sendHeight);
+      clearInterval(intervalId);
     };
   }, [sendHeight]);
 
   useEffect(() => {
-    sendHeight();
+    setTimeout(sendHeight, 0); // Delay to ensure DOM is updated
   }, [currentPage, formData, sendHeight]);
 
   const handleNextPage = () => {
@@ -105,10 +116,10 @@ export const RentalRequestForm: React.FC = () => {
   };
 
   return (
-    <div className="rental-form-container w-full max-w-lg mx-auto py-4 px-4 sm:px-6 lg:px-8">
+    <div ref={formRef} className="rental-form-container w-full max-w-lg mx-auto">
       {currentPage < 2 ? (
-        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg px-6 py-8 mb-4">
-          <div className="mb-6">
+        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg">
+          <div>
             {currentPage === 0 && (
               <ContactInfoForm
                 formData={formData}
