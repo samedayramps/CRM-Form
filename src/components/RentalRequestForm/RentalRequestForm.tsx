@@ -105,10 +105,11 @@ export const RentalRequestForm: React.FC = () => {
   };
 
   return (
-    <div className="rental-form-container w-full max-w-lg mx-auto">
+    <div className="rental-form-container w-full max-w-lg mx-auto p-4">
+      <h1 className="text-3xl font-bold mb-6 text-center">Ramp Request Form</h1>
       {currentPage < 2 ? (
-        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg">
-          <div>
+        <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6">
+          <div className="form-section">
             {currentPage === 0 && (
               <ContactInfoForm
                 formData={formData}

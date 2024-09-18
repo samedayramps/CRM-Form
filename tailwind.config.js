@@ -16,8 +16,13 @@ module.exports = {
         'button': '1.0625rem', // 17px
       },
       padding: {
-        'input': '0.625rem 0.875rem',
-        'button': '0.875rem 1.25rem',
+        'input': '0.75rem 1rem',
+        'button': '1rem 1.5rem',
+      },
+      spacing: {
+        'form-element': '0.75rem',
+        'form-group': '1.5rem',
+        'form-section': '2rem',
       },
     },
   },

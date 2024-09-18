@@ -55,7 +55,7 @@ export const RampDetailsForm: React.FC<RampDetailsFormProps> = ({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-3xl font-bold mb-6">Ramp Details</h2>
+      <h2 className="text-2xl font-semibold mb-4">Ramp Details</h2>
       
       <div className="space-y-2">
         <label className="form-label">
