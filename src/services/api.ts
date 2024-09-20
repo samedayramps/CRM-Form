@@ -2,11 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { RentalRequestFormData } from '../components/RentalRequestForm/types';
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URI || 'https://samedayramps-016e8e090b17.herokuapp.com',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
-  },
+  baseURL: 'https://samedayramps-016e8e090b17.herokuapp.com',
   withCredentials: true,
   timeout: 10000,
 });
