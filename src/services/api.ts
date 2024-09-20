@@ -10,7 +10,6 @@ const api = axios.create({
   },
 });
 
-
 export interface RentalRequestResponse {
   _id: string;
   customerInfo: {
