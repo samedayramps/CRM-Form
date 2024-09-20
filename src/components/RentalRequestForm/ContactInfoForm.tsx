@@ -18,28 +18,32 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
   onNextPage,
 }) => {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formattedPhoneNumber = formatPhoneNumber(e.target.value);
-    onChange('phone', formattedPhoneNumber);
+    const value = e.target.value;
+    const formattedPhoneNumber = formatPhoneNumber(value);
+    onChange('customerInfo.phone', formattedPhoneNumber);
   };
 
   const formatPhoneNumber = (value: string) => {
-    const phoneNumber = value.replace(/[^\d]/g, '');
+    const phoneNumber = value.replace(/\D/g, '');
     const phoneNumberLength = phoneNumber.length;
-    if (phoneNumberLength < 4) return phoneNumber;
-    if (phoneNumberLength < 7) {
+    
+    if (phoneNumberLength <= 3) {
+      return phoneNumber;
+    } else if (phoneNumberLength <= 6) {
       return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
     }
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
   };
 
   const handleNextPage = () => {
     const validationErrors = validateContactInfo(formData);
-    if (Object.keys(validationErrors).length === 0) {
+    if (Object.keys(validationErrors.customerInfo || {}).length === 0) {
       onNextPage();
     } else {
       // Update errors state in parent component
-      Object.entries(validationErrors).forEach(([field, error]) => {
-        onChange(field as keyof RentalRequestFormData, formData[field as keyof RentalRequestFormData], error);
+      Object.entries(validationErrors.customerInfo || {}).forEach(([field, error]) => {
+        onChange(`customerInfo.${field}`, formData.customerInfo[field as keyof typeof formData.customerInfo], error);
       });
     }
   };
@@ -49,37 +53,38 @@ export const ContactInfoForm: React.FC<ContactInfoFormProps> = ({
       <h2 className="text-2xl font-semibold mb-4">Contact Information</h2>
       <FormField
         label="First Name"
-        name="firstName"
-        value={formData.firstName}
-        onChange={(e) => onChange('firstName', e.target.value)}
-        error={errors.firstName}
+        name="customerInfo.firstName"
+        value={formData.customerInfo.firstName}
+        onChange={(e) => onChange('customerInfo.firstName', e.target.value)}
+        error={errors.customerInfo?.firstName}
         required
       />
       <FormField
         label="Last Name"
-        name="lastName"
-        value={formData.lastName}
-        onChange={(e) => onChange('lastName', e.target.value)}
-        error={errors.lastName}
+        name="customerInfo.lastName"
+        value={formData.customerInfo.lastName}
+        onChange={(e) => onChange('customerInfo.lastName', e.target.value)}
+        error={errors.customerInfo?.lastName}
         required
       />
       <FormField
         label="Email Address"
-        name="email"
+        name="customerInfo.email"
         type="email"
-        value={formData.email}
-        onChange={(e) => onChange('email', e.target.value)}
-        error={errors.email}
+        value={formData.customerInfo.email}
+        onChange={(e) => onChange('customerInfo.email', e.target.value)}
+        error={errors.customerInfo?.email}
         required
       />
       <FormField
         label="Phone Number"
-        name="phone"
+        name="customerInfo.phone"
         type="tel"
-        value={formData.phone}
+        value={formData.customerInfo.phone}
         onChange={handlePhoneChange}
-        error={errors.phone}
+        error={errors.customerInfo?.phone}
         required
+        placeholder="(123) 456-7890"
       />
       <div className="flex justify-center mt-6">
         <Button 

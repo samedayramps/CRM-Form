@@ -7,16 +7,18 @@ import { submitRentalRequest, RentalRequestResponse } from '../../services/api';
 
 export const RentalRequestForm: React.FC = () => {
   const [formData, setFormData] = useState<RentalRequestFormData>({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    knowRampLength: 'no',
-    estimatedRampLength: '',
-    knowRentalDuration: 'no',
-    estimatedRentalDuration: '',
-    installationTimeframe: '',
-    mobilityAids: [],
+    customerInfo: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+    },
+    rampDetails: {
+      knowRampLength: false,
+      knowRentalDuration: false,
+      installTimeframe: '',
+      mobilityAids: [],
+    },
     installAddress: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -25,13 +27,45 @@ export const RentalRequestForm: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
 
   const handleChange: FormChangeHandler = (field, value, error?) => {
-    setFormData(prevData => ({ ...prevData, [field]: value }));
+    setFormData(prevData => {
+      const newData = { ...prevData };
+      const [section, subField] = field.split('.');
+      if (subField) {
+        newData[section as keyof RentalRequestFormData] = {
+          ...(newData[section as keyof RentalRequestFormData] as object),
+          [subField]: value,
+        } as any;
+      } else {
+        (newData as any)[field] = value;
+      }
+      return newData;
+    });
+
     if (error !== undefined) {
-      setErrors(prevErrors => ({ ...prevErrors, [field]: error }));
+      setErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        const [section, subField] = field.split('.');
+        if (subField) {
+          if (!newErrors[section as keyof FormErrors]) {
+            newErrors[section as keyof FormErrors] = {} as any;
+          }
+          (newErrors[section as keyof FormErrors] as any)[subField] = error;
+        } else {
+          (newErrors as any)[field] = error;
+        }
+        return newErrors;
+      });
     } else {
       setErrors(prevErrors => {
         const newErrors = { ...prevErrors };
-        delete newErrors[field];
+        const [section, subField] = field.split('.');
+        if (subField) {
+          if (newErrors[section as keyof FormErrors]) {
+            delete (newErrors[section as keyof FormErrors] as any)[subField];
+          }
+        } else {
+          delete (newErrors as any)[field];
+        }
         return newErrors;
       });
     }
@@ -93,12 +127,29 @@ export const RentalRequestForm: React.FC = () => {
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
-    if (!formData.firstName) newErrors.firstName = 'First name is required';
-    if (!formData.lastName) newErrors.lastName = 'Last name is required';
-    if (!formData.email) newErrors.email = 'Email is required';
-    if (!formData.phone) newErrors.phone = 'Phone number is required';
-    if (!formData.installationTimeframe) newErrors.installationTimeframe = 'Installation timeframe is required';
-    if (!formData.installAddress) newErrors.installAddress = 'Installation address is required';
+    if (!formData.customerInfo.firstName) {
+      if (!newErrors.customerInfo) newErrors.customerInfo = {};
+      newErrors.customerInfo.firstName = 'First name is required';
+    }
+    if (!formData.customerInfo.lastName) {
+      if (!newErrors.customerInfo) newErrors.customerInfo = {};
+      newErrors.customerInfo.lastName = 'Last name is required';
+    }
+    if (!formData.customerInfo.email) {
+      if (!newErrors.customerInfo) newErrors.customerInfo = {};
+      newErrors.customerInfo.email = 'Email is required';
+    }
+    if (!formData.customerInfo.phone) {
+      if (!newErrors.customerInfo) newErrors.customerInfo = {};
+      newErrors.customerInfo.phone = 'Phone number is required';
+    }
+    if (!formData.rampDetails.installTimeframe) {
+      if (!newErrors.rampDetails) newErrors.rampDetails = {};
+      newErrors.rampDetails.installTimeframe = 'Installation timeframe is required';
+    }
+    if (!formData.installAddress) {
+      newErrors.installAddress = 'Installation address is required';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -115,7 +166,7 @@ export const RentalRequestForm: React.FC = () => {
                 formData={formData}
                 errors={errors}
                 onChange={handleChange}
-                onNextPage={handleNextPage}
+                onNextPage={handleNextPage}  // Make sure this line is present
               />
             )}
             {currentPage === 1 && (

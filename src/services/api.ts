@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { RentalRequestFormData } from '../components/RentalRequestForm/types';
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://app.samedayramps.com',
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3000',
   headers: {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
@@ -13,16 +13,20 @@ const api: AxiosInstance = axios.create({
 
 export interface RentalRequestResponse {
   _id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  knowRampLength: string;
-  estimatedRampLength?: string;
-  knowRentalDuration: string;
-  estimatedRentalDuration?: string;
-  installationTimeframe: string;
-  mobilityAids: string[];
+  customerInfo: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  rampDetails: {
+    knowRampLength: boolean;
+    rampLength?: number;
+    knowRentalDuration: boolean;
+    rentalDuration?: number;
+    installTimeframe: string;
+    mobilityAids: string[];
+  };
   installAddress: string;
   createdAt: string;
 }
@@ -30,7 +34,23 @@ export interface RentalRequestResponse {
 export const submitRentalRequest = async (formData: RentalRequestFormData): Promise<RentalRequestResponse> => {
   try {
     console.log('Submitting form data:', formData);
-    const response: AxiosResponse<RentalRequestResponse> = await api.post('/api/rental-requests', formData);
+    const response: AxiosResponse<RentalRequestResponse> = await api.post('/api/rental-requests', {
+      customerInfo: {
+        firstName: formData.customerInfo.firstName,
+        lastName: formData.customerInfo.lastName,
+        email: formData.customerInfo.email,
+        phone: formData.customerInfo.phone,
+      },
+      rampDetails: {
+        knowRampLength: formData.rampDetails.knowRampLength,
+        rampLength: formData.rampDetails.rampLength,
+        knowRentalDuration: formData.rampDetails.knowRentalDuration,
+        rentalDuration: formData.rampDetails.rentalDuration,
+        installTimeframe: formData.rampDetails.installTimeframe,
+        mobilityAids: formData.rampDetails.mobilityAids,
+      },
+      installAddress: formData.installAddress,
+    });
     console.log('Server response:', response.data);
     return response.data;
   } catch (error) {

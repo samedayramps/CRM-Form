@@ -1,33 +1,41 @@
 export interface RentalRequestFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  knowRampLength: string;
-  estimatedRampLength: string;
-  knowRentalDuration: string;
-  estimatedRentalDuration: string;
-  installationTimeframe: string;
-  mobilityAids: string[];
+  customerInfo: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  rampDetails: {
+    knowRampLength: boolean;
+    rampLength?: number;
+    knowRentalDuration: boolean;
+    rentalDuration?: number;
+    installTimeframe: '' | 'Within 24 hours' | 'Within 2 days' | 'Within 3 days' | 'Within 1 week' | 'Over 1 week';
+    mobilityAids: string[];
+  };
   installAddress: string;
 }
-  
-  export interface FormErrors {
+
+export interface FormErrors {
+  customerInfo?: {
     firstName?: string;
     lastName?: string;
     email?: string;
     phone?: string;
+  };
+  rampDetails?: {
     knowRampLength?: string;
-    estimatedRampLength?: string;
+    rampLength?: string;
     knowRentalDuration?: string;
-    estimatedRentalDuration?: string;
-    installationTimeframe?: string;
+    rentalDuration?: string;
+    installTimeframe?: string;
     mobilityAids?: string;
-    installAddress?: string;
-  }
-  
-  export type FormChangeHandler = (
-    field: keyof RentalRequestFormData,
-    value: string | string[],
-    error?: string
-  ) => void;
+  };
+  installAddress?: string;
+}
+
+export type FormChangeHandler = (
+  field: string,
+  value: string | string[] | boolean | number,
+  error?: string
+) => void;
